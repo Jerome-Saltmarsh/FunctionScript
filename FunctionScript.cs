@@ -825,6 +825,8 @@ public static class Mouse
     public static bool RightClicked => Input.GetMouseButton(Right);
 
     public static Vector2 ScreenPosition => Input.mousePosition;
+    
+    public static float Scroll =>  Input.mouseScrollDelta.y;
 }
 
 public static class Vector3Extensions
@@ -927,6 +929,11 @@ public static class FloatExtensions
     public static bool isPositive(this float value)
     {
         return value >= 0;
+    }
+
+    public static float clamp(this float value, float min, float max)
+    {
+        return Mathf.Clamp(value, min, max);
     }
 }
 

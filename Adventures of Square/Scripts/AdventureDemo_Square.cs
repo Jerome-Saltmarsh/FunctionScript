@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
+using Random = UnityEngine.Random;
 
 public class AdventureDemo_Square : MonoBehaviour
 {
@@ -9,6 +11,17 @@ public class AdventureDemo_Square : MonoBehaviour
     private const float MovementDistance = 1f;
     private const Ease MovementEase = Ease.InOutCirc;
     private const Ease SpinEase = Ease.InOutElastic;
+    private Script breathScript;
+
+    private void Start()
+    {
+        Vector3 breath = new Vector3(0.1f, 0.1f, 0);
+        float breathDuration = 1f;
+        
+        breathScript = transform.loop()
+            .expand(transform, breath,breathDuration)
+            .shrink(transform, breath, breathDuration);
+    }
 
     public void moveLeft()
     {
@@ -51,10 +64,28 @@ public class AdventureDemo_Square : MonoBehaviour
                 float amount = 0.25f;
 
                 thatScript
-                    .expand(transform, MovementDuration, Ease.Linear, y: amount)
-                    .shrink(transform, MovementDuration, Ease.Linear, y: amount);
+                    .expand(transform, MovementDuration * 0.5f, Ease.Linear, y: amount)
+                    .shrink(transform, MovementDuration * 0.5f, Ease.Linear, y: amount);
+            })
+            .perform(() =>
+            {
+                if (x == 1)
+                {
+                    rotation = 270;
+                }else if (y == 1)
+                {
+                    rotation = 0;
+                }else if (x == -1)
+                {
+                    rotation = 90;
+                }
+                else
+                {
+                    rotation = 180;
+                }
             })
             .translate(transform, MovementDuration, MovementEase, x: x * MovementDistance, y:y * MovementDistance)
+            .wait(0.05f)
             .perform(() => currentAction = null);
     }
 
@@ -88,4 +119,18 @@ public class AdventureDemo_Square : MonoBehaviour
     }
     
     private bool Busy => currentAction != null;
+
+    private float rotation
+    {
+        get
+        {
+            return transform.eulerAngles.z;
+        }
+        set
+        {
+            Vector3 eulerAngle = transform.eulerAngles;
+            eulerAngle.z = value;
+            transform.eulerAngles = eulerAngle;
+        }
+    }
 }

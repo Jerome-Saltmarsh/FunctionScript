@@ -12,6 +12,7 @@ public class AdventureDemo : MonoBehaviour
     public Image textImage;
     public Text text;
     public Transform textTarget;
+    public Transform mouseTarget;
     
     public Vector3 playerStartPosition;
 
@@ -66,6 +67,7 @@ public class AdventureDemo : MonoBehaviour
 
         GameObject.FindGameObjectsWithTag("Sway").ToList().ForEach(addSway);
         GameObject.FindGameObjectsWithTag("Sparkle").ToList().ForEach(addSparkle);
+        GameObject.FindGameObjectsWithTag("Water").ToList().ForEach(addWater);
         // GameObject.FindGameObjectsWithTag("Blink").ToList().ForEach(addBlink);
     }
 
@@ -73,7 +75,30 @@ public class AdventureDemo : MonoBehaviour
     {
         updateCamera();
         handleKeyboardInput();
+        handleMouseInput();
         updateText();
+        updateCursor();
+    }
+
+    private void updateCursor()
+    {
+        Vector3 mouseWorldPosition = MouseWorldPosition;
+        mouseWorldPosition.x = (int) (mouseWorldPosition.x);
+        mouseWorldPosition.y = (int) (mouseWorldPosition.y);
+        mouseTarget.transform.position = mouseWorldPosition;
+    }
+
+    private void handleMouseInput()
+    {
+        if (Mouse.LeftClicked)
+        {
+            player.script().walkTo(player, MouseWorldPosition);
+        }
+
+        if (Mouse.Scroll != 0)
+        {
+            CameraZoom += Mouse.Scroll;
+        }
     }
 
     private void updateCamera()
@@ -121,13 +146,25 @@ public class AdventureDemo : MonoBehaviour
         textTarget = obj.Transform();
     }
 
+    private Vector3 MouseWorldPosition => convertScreenToWorldPosition(Mouse.ScreenPosition);
+
+    private Vector3 convertScreenToWorldPosition(Vector3 screenPosition)
+    {
+        screenPosition.z = -camera.transform.position.z;
+        return camera.ScreenToWorldPoint(screenPosition);
+    }
+
     private static void addSway(Object obj)
     {
-        obj.loop()
-            .translate(obj, 1f, Ease.InOutQuad, TreeSway)
-            .wait(() => Random.value * 3f)
-            .translate(obj, 1f, Ease.InOutQuad, -TreeSway)
-            .wait(() => Random.value * 3f);
+        float duration = 1.5f;
+
+        obj.script().wait(Random.value * 3f)
+            .perform(() =>{
+                obj.loop()
+                    .translate(obj, duration, Ease.InOutQuad, TreeSway, TreeSway)
+                    // .wait(() => Random.value * 3f)
+                    .translate(obj, duration, Ease.InOutQuad, -TreeSway, -TreeSway);
+        });
     }
 
     private static void addBlink(Object obj)
@@ -140,13 +177,43 @@ public class AdventureDemo : MonoBehaviour
     
     private static void addSparkle(Object obj)
     {
-        obj.loop()
-            .wait(Random.value * 8)
-            .animateOpacity(obj, 0.8f)
-            .animateOpacity(obj, 0);
+        obj.script()
+            .setOpacity(obj, 0)
+            .wait(Random.value * 2)
+            .perform(() =>
+            {
+                obj.loop()
+                    .animateOpacity(obj, 1f)
+                    .animateOpacity(obj, 0);
+            });
     }
-    
-    
+
+    public static void addWater(Object obj)
+    {
+        obj.script()
+            // .setOpacity(obj, 0)
+            .wait(Random.value * 2)
+            .perform(() =>
+            {
+                Transform transform = obj.Transform();
+                float amount = Random.value.clamp(0.1f, 0.8f);
+                
+                obj.loop()
+                    .expand(obj, 1f, x:transform.localScale.x * amount)
+                    .shrink(obj, 1f, x:transform.localScale.x * amount);
+            });
+    }
+
+    public float CameraZoom
+    {
+        get => camera.transform.position.z;
+        set
+        {
+            Vector3 cameraPosition = camera.transform.position;
+            cameraPosition.z = value.clamp(-100, -5);
+            camera.transform.position = cameraPosition;
+        }
+    }
 }
 
 public static class SquareScripts
