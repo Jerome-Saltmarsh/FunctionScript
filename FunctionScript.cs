@@ -230,6 +230,11 @@ public class Script
         });
     }
 
+    public Script performUntil(Func<bool> conditionalAction)
+    {
+        return add(conditionalAction);
+    }
+
     public Script waitUntil(Func<bool> condition)
     {
         return add(condition);
@@ -326,6 +331,21 @@ public static class ScriptExtensionsCore
             .perform(
                 () => tweenFunction(easeFunction(0, value, 1f) - previousValue)
             );
+    }
+
+    public static Script setPosition(this Script script, Object obj, Object target)
+    {
+        return script.setPosition(GetTransform(obj), GetTransform(target).position);
+    }
+    
+    public static Script setPosition(this Script script, Object obj, Vector3 position)
+    {
+        return script.setPosition(GetTransform(obj), position);
+    }
+
+    public static Script setPosition(this Script script, Transform transform, Vector3 position)
+    {
+        return script.perform(() => transform.position = position);
     }
 
     public static Script remove(this Script script, Component component)
@@ -703,24 +723,51 @@ public static class ScriptExtensionsCore
         return script.waitUntil(() => Vector3.Distance(aTransform.position, bTransform.position) > distance);
     }
 
+    public static Script waitUntilLeftClick(this Script script)
+    {
+        return script
+            .setChannelUpdate()
+            .waitUntil(() => Mouse.LeftClicked)
+            .setChannelFixedUpdate();
+    }
+    
+    private static GameObject GetGameObject(Object obj)
+    {
+        switch (obj)
+        {
+            case GameObject gameObject:
+                return gameObject;
+            case Component component:
+                return component.gameObject;
+            default:
+                throw new UnityException("Cannot get GameObject");
+        }
+    }
+
     private static Transform GetTransform(Object obj)
     {
-        if (obj is GameObject gameObject)
+        switch (obj)
         {
-            return gameObject.transform;
+            case GameObject gameObject:
+                return gameObject.transform;
+            case Component component:
+                return component.transform;
+            default:
+                throw new UnityException("Cannot get Transform");
         }
-
-        return ((Component) obj).transform;
     }
 
     private static T GetComponent<T>(Object obj) where T : Component
     {
-        if (obj is GameObject gameObject)
+        switch (obj)
         {
-            return gameObject.GetComponent<T>();
+            case GameObject gameObject:
+                return gameObject.GetComponent<T>();
+            case Component component:
+                return component.GetComponent<T>();
+            default:
+                throw new UnityException("Cannot get Component");
         }
-
-        return ((Component) obj).GetComponent<T>();
     }
 }
 
@@ -730,7 +777,6 @@ public static class Mouse
     private const int Right = 1;
 
     public static bool LeftClicked => Input.GetMouseButton(Left);
-
     public static bool RightClicked => Input.GetMouseButton(Right);
 
     public static Vector2 ScreenPosition => Input.mousePosition;
@@ -764,6 +810,16 @@ public static class GraphicExtensions
 
 public static class IOExtensions
 {
+    public static void onPressed(this KeyCode keyCode, Action action)
+    {
+        keyCode.isPressed().then(action);
+    }
+
+    public static void onHeld(this KeyCode keyCode, Action action)
+    {
+        keyCode.isHeld().then(action);
+    }
+    
     public static bool isPressed(this KeyCode keyCode)
     {
         return Input.GetKeyDown(keyCode);
@@ -778,13 +834,46 @@ public static class IOExtensions
     {
         return Input.GetKey(keyCode);
     }
+}
 
-    public static Script waitUntilLeftClick(this Script script)
+public static class BooleanExtensions
+{
+    public static void then(this bool value, Action action)
     {
-        return script
-            .setChannelUpdate()
-            .waitUntil(() => Mouse.LeftClicked)
-            .setChannelFixedUpdate();
+        if (value)
+        {
+            action();
+        }
+    }
+    
+    public static void then(this bool value, Action action, Action otherwise)
+    {
+        if (value)
+        {
+            action();
+        }
+        else
+        {
+            otherwise();
+        }
+    }
+}
+
+public static class FloatExtensions
+{
+    public static float abs(this float value)
+    {
+        return Mathf.Abs(value);
+    }
+
+    public static bool isNegative(this float value)
+    {
+        return value < 0;
+    }
+
+    public static bool isPositive(this float value)
+    {
+        return value >= 0;
     }
 }
 
@@ -801,7 +890,26 @@ public static class ObjectExtensions
         return t;
     }
 
-
+    public static bool withinDistanceOf(this Object obj, Object that, float distance)
+    {
+        return obj.distanceFrom(that) <= distance;
+    }
+    
+    public static bool withinDistanceOf(this Object obj, Vector3 position, float distance)
+    {
+        return obj.distanceFrom(position) <= distance;
+    }
+    
+    public static float distanceFrom(this Object obj, Vector3 position)
+    {
+        return Vector3.Distance(obj.Transform().position, position);
+    }
+    
+    public static float distanceFrom(this Object obj, Object that)
+    {
+        return Vector3.Distance(obj.Transform().position, that.Transform().position);
+    }
+    
     public static Script script(this Component component, OnScriptFinished onScriptFinished = OnScriptFinished.Destroy_Behavior)
     {
         return new Script(component.gameObject, onScriptFinished);

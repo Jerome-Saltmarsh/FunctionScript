@@ -2,21 +2,14 @@
 
 public class Example03 : MonoBehaviour
 {
-    public Transform a;
-    public Transform b;
+    public Vector2 destination;
+    public Transform square;
     
     void Start()
     {
-        Script flashScript = new Script("Flashing")
-            .animateOpacity(a, 0)
-            .animateOpacity(a, 1)
+        new Script("Click Listener")
+            .perform(() => square.transform.position = Mouse.ScreenPosition)
             .loop();
 
-        this.script()
-            .waitUntilWithinDistance(a, b, 3f)
-            .pause(flashScript)
-            .color(a, Color.blue)
-            .wait(5)
-            .resume(flashScript);
     }
 }
