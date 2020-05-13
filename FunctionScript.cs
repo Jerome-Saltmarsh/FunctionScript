@@ -332,6 +332,28 @@ public static class ScriptExtensionsCore
                 () => tweenFunction(easeFunction(0, value, 1f) - previousValue)
             );
     }
+    
+    public static Script tweenTo(this Script script, float duration, Action<float> tweenFunction, Ease ease = Ease.Linear)
+    {
+        float startTime = 0;
+        float endTime = 0;
+        EasingFunction.Function easeFunction = EasingFunction.GetEasingFunction(ease);
+
+        return script.perform(() =>
+            {
+                startTime = Time.time;
+                endTime = startTime + duration;
+            }).performUntil(() =>
+            {
+                float timeElapsed = Time.time - startTime;
+                float easeValue = timeElapsed / duration;
+                float val = easeFunction(0, 1f, easeValue);
+                tweenFunction(val);
+            }, () => Time.time >= endTime)
+            .perform(
+                () => tweenFunction(easeFunction(0, 1f, 1f))
+            );
+    }
 
     public static Script setPosition(this Script script, Object obj, Object target)
     {
@@ -453,6 +475,11 @@ public static class ScriptExtensionsCore
     public static Script setDeactive(this Script script, GameObject gameObject)
     {
         return script.setActive(gameObject, false);
+    }
+    
+    public static Script wait(this Script script, Func<float> duration)
+    {
+        return script.wait(duration());
     }
 
     public static Script wait(this Script script, float duration)
@@ -624,6 +651,24 @@ public static class ScriptExtensionsCore
     {
         return script.shrink(obj, new Vector3(x, y, z), duration, ease);
     }
+
+    public static Script scaleTo(this Script script, Object obj, float duration, Ease ease, Vector3 targetScale)
+    {
+        Vector3 startingScale = Vector3.zero;
+        Transform transform = obj.Transform();
+        Vector3 difference = Vector3.zero;
+        float totalDistance = Vector3.Magnitude(difference);
+
+        return script.perform(() =>
+        {
+            startingScale = transform.localScale;
+            difference = targetScale - startingScale;
+
+        }).tweenTo(duration,  (value) =>
+        {
+            transform.localScale = startingScale + difference.clampMagnitude(totalDistance * value);
+        }, ease);
+    }
     
     public static Script shrink(this Script script, Object obj, Vector3 scale, float duration, Ease ease = Ease.Linear)
     {
@@ -782,6 +827,14 @@ public static class Mouse
     public static Vector2 ScreenPosition => Input.mousePosition;
 }
 
+public static class Vector3Extensions
+{
+    public static Vector3 clampMagnitude(this Vector3 vector3, float value)
+    {
+        return Vector3.ClampMagnitude(vector3, value);
+    }
+}
+
 public static class GraphicExtensions
 {
     public static Script waitUntilClicked(this Script script, Graphic graphic)
@@ -910,14 +963,27 @@ public static class ObjectExtensions
         return Vector3.Distance(obj.Transform().position, that.Transform().position);
     }
     
-    public static Script script(this Component component, OnScriptFinished onScriptFinished = OnScriptFinished.Destroy_Behavior)
+    public static Script script(this Object obj, OnScriptFinished onScriptFinished = OnScriptFinished.Destroy_Behavior)
     {
-        return new Script(component.gameObject, onScriptFinished);
+        return new Script(obj.GameObject(), onScriptFinished);
     }
 
-    public static Script loop(this Component component)
+    public static Script loop(this Object obj)
     {
-        return new Script(component.gameObject, OnScriptFinished.Loop);
+        return new Script(obj.GameObject(), OnScriptFinished.Loop);
+    }
+    
+    public static GameObject GameObject(this Object obj)
+    {
+        switch (obj)
+        {
+            case GameObject gameObject:
+                return gameObject;
+            case Component component:
+                return component.gameObject;
+            default:
+                throw new UnityException("Cannot get transform from object");
+        }
     }
 
     public static Transform Transform(this Object obj)
