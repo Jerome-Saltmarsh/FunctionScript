@@ -52,6 +52,7 @@ public class AdventureDemo : MonoBehaviour
             .say(guard1, "Like this!", this)
             .perform(guard1.spin)
             .perform(guard1.spin)
+            .wait(2)
             .say(guard1, "I'm all dizzy now...", this)
             .say(guard1, "You can also press the 1,2,3 keys to change color!", this)
             .perform(() => guard1.changeColor(Color.yellow))
