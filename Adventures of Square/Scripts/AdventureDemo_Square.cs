@@ -67,6 +67,14 @@ public class AdventureDemo_Square : MonoBehaviour
                     .expand(transform, MovementDuration * 0.5f, Ease.Linear, y: amount)
                     .shrink(transform, MovementDuration * 0.5f, Ease.Linear, y: amount);
             })
+            .async((thatScript) =>
+            {
+                float amount = 0.25f;
+
+                thatScript
+                    .shrink(transform, MovementDuration * 0.5f, Ease.Linear, x: amount)
+                    .expand(transform, MovementDuration * 0.5f, Ease.Linear, x: amount);
+            })
             .perform(() =>
             {
                 if (x == 1)
