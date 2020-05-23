@@ -8,7 +8,7 @@ public class Example03 : MonoBehaviour
     void Start()
     {
         new Script("Click Listener")
-            .perform(() => square.transform.position = Mouse.ScreenPosition)
+            .perform(() => square.transform.position = Mouse.Position)
             .loop();
 
     }

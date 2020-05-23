@@ -698,7 +698,6 @@ public static class ScriptExtensionsCore
         float startTime = 0;
         float endTime = 0;
         float startOpacity = 0;
-        float value = 0;
         EasingFunction.Function easeFunction = EasingFunction.GetEasingFunction(ease);
 
         SpriteRenderer spriteRenderer = GetComponent<SpriteRenderer>(objekt);
@@ -772,7 +771,7 @@ public static class ScriptExtensionsCore
     {
         return script
             .setChannelUpdate()
-            .waitUntil(() => Mouse.LeftClicked)
+            .waitUntil(() => Mouse.leftClicked)
             .setChannelFixedUpdate();
     }
     
@@ -818,15 +817,59 @@ public static class ScriptExtensionsCore
 
 public static class Mouse
 {
-    private const int Left = 0;
-    private const int Right = 1;
+    private static Vector2 position;
 
-    public static bool LeftClicked => Input.GetMouseButton(Left);
-    public static bool RightClicked => Input.GetMouseButton(Right);
+    private const int LEFT = 0;
+    private const int RIGHT = 1;
+    private const int MIDDLE = 2;
 
-    public static Vector2 ScreenPosition => Input.mousePosition;
+    public static bool rightClicked => Input.GetMouseButtonDown(RIGHT);
+
+    public static bool rightHeldDown => Input.GetMouseButton(RIGHT);
+
+    public static bool rightReleased => Input.GetMouseButtonUp(RIGHT);
+
+    public static bool leftReleased => Input.GetMouseButtonUp(LEFT);
+
+    public static bool middleClicked => Input.GetMouseButtonDown(MIDDLE);
+
+    public static bool middleHeld => Input.GetMouseButton(MIDDLE);
+
+    public static bool MiddleReleased => Input.GetMouseButtonUp(MIDDLE);
+
+    public static bool leftClicked => Input.GetMouseButtonDown(LEFT);
+
+    public static bool LeftHeldDown => Input.GetMouseButton(LEFT);
+
+    public static float ScrollWheelVelocity => Input.GetAxis("Mouse ScrollWheel");
+
+    public static float VelocityX => Input.GetAxis("Mouse X");
     
-    public static float Scroll =>  Input.mouseScrollDelta.y;
+    public static float VelocityY => Input.GetAxis("Mouse Y");
+    
+
+    public static bool IsOver(Graphic graphic)
+    {
+        return IsOver(graphic.rectTransform);
+    }
+
+    public static bool IsOver(RectTransform rectTransform)
+    {
+        return rectTransform.contains(Position);
+    }
+
+    /// <summary>
+    /// Screen Position
+    /// </summary>
+    public static Vector2 Position
+    {
+        get
+        {
+            position.x = Input.mousePosition.x;
+            position.y = Input.mousePosition.y;
+            return position;
+        }
+    }
 }
 
 public static class Vector3Extensions
@@ -849,12 +892,12 @@ public static class GraphicExtensions
     
     public static bool isLeftClicked(this Graphic graphic)
     {
-        return Mouse.LeftClicked && graphic.containsMouse();
+        return Mouse.leftClicked && graphic.containsMouse();
     }
 
     public static bool containsMouse(this Graphic graphic)
     {
-        return graphic.contains(Mouse.ScreenPosition);
+        return graphic.contains(Mouse.Position);
     }
 
     public static bool contains(this Graphic graphic, Vector2 screenPosition)
